@@ -13,12 +13,28 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost:50785/shop_
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+Sales = db.Table('Sales',
+    db.Column('id', db.Integer, primary_key = True, nullable = False),
+    db.Column('user_id', db.Integer, db.ForeignKey('Users.id')),
+    db.Column('product_id', db.Integer, db.ForeignKey('Products.id')),
+    db.Column('sell_date', DateTime(timezone=True), server_default=func.now(), nullable = False)
+)
+    
+
 class users(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True, nullable = False)
     first_name = db.Column('First Name', db.String(80), nullable = False)
     last_name = db.Column('Last Name', db.String(80), nullable = False)
     joined_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
+    buyers = db.relationship('products', secondary=Sales, lazy='subquery',
+        backref=db.backref('users', lazy=True))
+
+    def __repr__(self):
+        return f'User:{self.first_name} {self.last_name}'
+    def __init__(self, first_name, last_name):
+        self.first_name = first_name
+        self.last_name = last_name
 
 class products(db.Model):
     __tablename__ = 'Products'
@@ -26,15 +42,8 @@ class products(db.Model):
     name = db.Column('Name', db.String(100), nullable = False)
     created_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
     sell_state = db.Column(db.Boolean, nullable = False)
-
-class sales(db.Model):
-    __tablename__ = 'Sales'
-    id = db.Column(db.Integer, primary_key = True, nullable = False)
-    user_id = db.Column('user_id', db.Integer, db.ForeignKey('Users.id'))
-    product_id = db.Column('product_id', db.Integer, db.ForeignKey('Products.id'))
-    sell_date = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
-    user = db.relationship('Users', backref=db.backref('sales'))
-    product = db.relationship('Products', backref=db.backref('sales'))
+    sales = db.relationship('Sales', secondary=Sales, lazy='subquery',
+        backref=db.backref('products', lazy=True))
 
 db.create_all()
 db.session.commit()
@@ -42,4 +51,8 @@ db.session.commit()
 @app.route('/')
 def index():
     return 'Hello, welcome to our shop!'
+
+@app.route('/users')
+def get_users():
+    return
 
