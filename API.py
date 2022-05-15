@@ -1,3 +1,4 @@
+from re import L
 from flask import Flask, request, flash, url_for, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
@@ -19,10 +20,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost:52000/shop_
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-class RegistrationForm (FlaskForm):
-    first_name = StringField('First name', validators = [InputRequired()])
-    last_name = StringField('Last Name', validators = [InputRequired()])
-
 Sales = db.Table('Sales',
     db.Column('id', db.Integer, primary_key = True, nullable = False),
     db.Column('user_id', db.Integer, db.ForeignKey('Users.id')),
@@ -34,8 +31,8 @@ Sales = db.Table('Sales',
 class users(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True, nullable = False)
-    first_name = db.Column('First Name', db.String(80), nullable = False)
-    last_name = db.Column('Last Name', db.String(80), nullable = False)
+    first_name = db.Column(db.String(80), nullable = False)
+    last_name = db.Column(db.String(80), nullable = False)
     joined_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
     buyers = db.relationship('products', secondary=Sales, lazy='subquery',
         backref=db.backref('users', lazy=True))
@@ -57,13 +54,33 @@ class products(db.Model):
 db.create_all()
 db.session.commit()
 
+def add_users():
+    first_name = str(input('Enter your first name.'))
+    last_name = str(input('Enter your last name.'))
+    new_user = users(first_name=first_name, last_name=last_name)
+    db.session.add(new_user)
+    db.session.commit()
+
 @app.route('/')
 def index():
     return 'Hello, welcome to our shop!'
 
-@app.route('/register', methods = ['GET', 'POST'])
-def create_user():
-    return
+@app.route('/register', methods = ['GET', 'PUT'])
+def register():
+    try:
+        add_users()
+    except ValueError:
+        flash('Oops! It seems an error has occured, please try again.')
+    return redirect(url_for('index'))
+
+@app.route('/users', methods = ['GET'])
+def get_users():
+    users.Query.all()
+    
+    return None
+
+        
+
 
 
 
