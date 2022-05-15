@@ -1,9 +1,5 @@
-from re import L
 from flask import Flask, request, flash, url_for, redirect
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
-from wtforms import StringField
-from wtforms.validators import InputRequired
 from sqlalchemy import create_engine, DateTime
 from sqlalchemy.sql import func
 app = Flask(__name__)
