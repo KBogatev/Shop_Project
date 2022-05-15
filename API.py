@@ -1,4 +1,4 @@
-from flask import Flask, request, flash, url_for, redirect
+from flask import Flask, request, flash, url_for, redirect, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, DateTime
 from sqlalchemy.sql import func
@@ -71,7 +71,14 @@ def register():
 
 @app.route('/users', methods = ['GET'])
 def get_users():
-    return None
+    Users = users.query.all()
+    userlist = []
+
+    for user in Users:
+        user_data = (f'{user.first_name} {user.last_name}')
+        userlist.append(user_data)
+    return {"Users": userlist}
+
     
     
 
