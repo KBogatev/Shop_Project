@@ -4,12 +4,12 @@ from sqlalchemy import create_engine, DateTime
 from sqlalchemy.sql import func
 
 app = Flask(__name__)
-url = "mysql://root:root@localhost:50785"
+url = "mysql://root:root@localhost:52000"
 engine = create_engine(url)
 create_str = "CREATE DATABASE IF NOT EXISTS shop_db;"
 engine.execute(create_str)
 engine.execute("USE shop_db;")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost:50785/shop_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost:52000/shop_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -42,8 +42,6 @@ class products(db.Model):
     name = db.Column('Name', db.String(100), nullable = False)
     created_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
     sell_state = db.Column(db.Boolean, nullable = False)
-    sales = db.relationship('Sales', secondary=Sales, lazy='subquery',
-        backref=db.backref('products', lazy=True))
 
 db.create_all()
 db.session.commit()
@@ -52,7 +50,7 @@ db.session.commit()
 def index():
     return 'Hello, welcome to our shop!'
 
-@app.route('/users')
-def get_users():
+@app.route('/create user', methods = ['GET', 'POST'])
+def create_user():
     return
 
