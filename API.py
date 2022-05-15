@@ -61,7 +61,7 @@ def add_users():
 def index():
     return 'Hello, welcome to our shop!'
 
-@app.route('/register', methods = ['GET', 'PUT'])
+@app.route('/register', methods = ['GET', 'POST'])
 def register():
     try:
         add_users()
@@ -71,9 +71,11 @@ def register():
 
 @app.route('/users', methods = ['GET'])
 def get_users():
-    users.Query.all()
-    
     return None
+    
+    
+
+
 
         
 
