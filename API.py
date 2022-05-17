@@ -50,13 +50,6 @@ class products(db.Model):
 db.create_all()
 db.session.commit()
 
-def add_users():
-    first_name = str(input('Enter your first name.'))
-    last_name = str(input('Enter your last name.'))
-    new_user = users(first_name=first_name, last_name=last_name)
-    db.session.add(new_user)
-    db.session.commit()
-
 @app.route('/')
 def index():
     return 'Hello, welcome to our shop!'
@@ -64,9 +57,13 @@ def index():
 @app.route('/register', methods = ['GET', 'POST'])
 def register():
     try:
-        add_users()
+        first_name = str(input('Enter your first name:'))
+        last_name = str(input('Enter your last name:'))
+        new_user = users(first_name=first_name, last_name=last_name)
+        db.session.add(new_user)
+        db.session.commit()
     except ValueError:
-        flash('Oops! It seems an error has occured, please try again.')
+        return 'Oops! It seems an error has occured, please try again.'
     return redirect(url_for('index'))
 
 @app.route('/users', methods = ['GET'])
@@ -78,6 +75,17 @@ def get_users():
         user_data = (f'{user.first_name} {user.last_name}')
         userlist.append(user_data)
     return {"Users": userlist}
+
+@app.route('/unsubscribe', methods = ['GET', 'DELETE'])
+def del_user():
+    try:
+        first_name = str(input('Enter the first name of the user you wish to delete:'))
+        last_name = str(input('Enter the last name of the user you wish to delete:'))
+        users.query.filter(users.first_name == first_name, users.last_name==last_name).delete()
+        db.session.commit()    
+    except ValueError:
+        return 'Oops! It seems that user does not exist, please try again.'
+    return 'User succesfully deleted.'
 
     
     
