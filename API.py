@@ -1,4 +1,4 @@
-from flask import Flask, request, url_for, redirect, render_template
+from flask import Flask, request, url_for, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, DateTime
 from sqlalchemy.sql import func
@@ -60,15 +60,12 @@ def index():
 
 @app.route('/register', methods = ['GET', 'POST'])
 def register():
-    try:
-        first_name = str(input('Enter your first name:'))
-        last_name = str(input('Enter your last name:'))
-        new_user = users(first_name=first_name, last_name=last_name)
-        db.session.add(new_user)
-        db.session.commit()
-    except:
-        return 'Oops! It seems an error has occured, please try again.'
-    return redirect(url_for('index'))
+    first_name = str(input('Enter your first name:'))
+    last_name = str(input('Enter your last name:'))
+    new_user = users(first_name=first_name, last_name=last_name)
+    db.session.add(new_user)
+    db.session.commit()
+
 
 @app.route('/users', methods = ['GET'])
 def get_users():
@@ -91,13 +88,24 @@ def del_user():
         return 'Oops! It seems that user does not exist, please try again.'
     return 'User succesfully deleted.'
 
-    
-    
+@app.route('/newitem', methods = ['GET', 'POST'])
+def add_item():
+    return None
 
+@app.route('/items', methods = ['GET'])
+def get_items():
+    Items = products.query.all()
+    itemlist = []
 
+    for item in Items:
+        item_data = (f'{item.name} - {item.desc}')
+        itemlist.append(item_data)
+    return {"Products": itemlist}
 
-        
+@app.route('/removeitem', methods = ['GET', 'DELETE'])
+def del_item():
+    return None
 
-
-
-
+@app.route('/iteminfo', methods = ['GET'])
+def item_info():
+    None
