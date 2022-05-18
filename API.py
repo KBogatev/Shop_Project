@@ -1,4 +1,4 @@
-from flask import Flask, request, flash, url_for, redirect, render_template
+from flask import Flask, request, url_for, redirect, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, DateTime
 from sqlalchemy.sql import func
@@ -44,8 +44,12 @@ class products(db.Model):
     __tablename__ = 'Products'
     id = db.Column(db.Integer, primary_key = True, nullable = False)
     name = db.Column('Name', db.String(100), nullable = False)
+    desc = db.Column('Description', db.String(255), nullable = False)
     created_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
     sell_state = db.Column(db.Boolean, nullable = False)
+
+    def __repr__(self):
+        return f'Product:{self.name} - {self.desc}'
 
 db.create_all()
 db.session.commit()
@@ -62,7 +66,7 @@ def register():
         new_user = users(first_name=first_name, last_name=last_name)
         db.session.add(new_user)
         db.session.commit()
-    except ValueError:
+    except:
         return 'Oops! It seems an error has occured, please try again.'
     return redirect(url_for('index'))
 
