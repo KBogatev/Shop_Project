@@ -43,7 +43,7 @@ class users(db.Model):
 class products(db.Model):
     __tablename__ = 'Products'
     id = db.Column(db.Integer, primary_key = True, nullable = False)
-    name = db.Column('Name', db.String(100), nullable = False)
+    name = db.Column('Name', db.String(100), nullable = False, unique = True)
     desc = db.Column('Description', db.String(255), nullable = False)
     created_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
     sell_state = db.Column(db.Boolean, nullable = False)
@@ -104,7 +104,13 @@ def get_items():
 
 @app.route('/removeitem', methods = ['GET', 'DELETE'])
 def del_item():
-    return None
+    try:
+        item_name = str(input('Enter the name of the product you wish to delete:'))
+        products.query.filter(products.name == item_name).delete()
+        db.session.commit()    
+    except ValueError:
+        return 'Oops! It seems that product does not exist, please try again.'
+    return 'Product succesfully deleted.'
 
 @app.route('/iteminfo', methods = ['GET'])
 def item_info():
