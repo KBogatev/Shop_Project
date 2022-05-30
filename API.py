@@ -90,6 +90,16 @@ def del_user():
         return 'Oops! It seems that user does not exist, please try again.'
     return 'User succesfully deleted.'
 
+@app.route('/userinfo/<id>', methods = ['GET'])
+def user_info(id):
+    user = users.query.get(id)
+    Sales = sales.query.filter(sales.user_id == id)
+    purchase_list = []
+    for sale in Sales:
+        items = products.query.filter(sale.product_id == products.id).first()
+        items_data = (f'{items.name}')
+        purchase_list.append(items_data)
+    return {f"Purchases of {user.first_name} {user.last_name}" : purchase_list}
 @app.route('/items/newitem', methods = ['GET', 'POST'])
 def add_item():
     item_name = str(input('Enter the name of your item:'))
