@@ -58,7 +58,7 @@ db.session.commit()
 def index():
     return 'Hello, welcome to our shop!'
 
-@app.route('/register', methods = ['GET', 'POST'])
+@app.route('/users/register', methods = ['GET', 'POST'])
 def register():
     first_name = str(input('Enter your first name:'))
     last_name = str(input('Enter your last name:'))
@@ -77,7 +77,7 @@ def get_users():
         userlist.append(user_data)
     return {"Users": userlist}
 
-@app.route('/unsubscribe', methods = ['GET', 'DELETE'])
+@app.route('/users/unsubscribe', methods = ['GET', 'DELETE'])
 def del_user():
     try:
         first_name = str(input('Enter the first name of the user you wish to delete:'))
@@ -88,9 +88,13 @@ def del_user():
         return 'Oops! It seems that user does not exist, please try again.'
     return 'User succesfully deleted.'
 
-@app.route('/newitem', methods = ['GET', 'POST'])
+@app.route('/items/newitem', methods = ['GET', 'POST'])
 def add_item():
-    return None
+    item_name = str(input('Enter the name of your item:'))
+    item_desc = str(input('Enter the description of your item:'))
+    new_item = products(name=item_name, desc=item_desc)
+    db.session.add(new_item)
+    db.session.commit()
 
 @app.route('/items', methods = ['GET'])
 def get_items():
@@ -102,7 +106,7 @@ def get_items():
         itemlist.append(item_data)
     return {"Products": itemlist}
 
-@app.route('/removeitem', methods = ['GET', 'DELETE'])
+@app.route('/items/removeitem', methods = ['GET', 'DELETE'])
 def del_item():
     try:
         item_name = str(input('Enter the name of the product you wish to delete:'))
