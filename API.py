@@ -34,7 +34,7 @@ class users(db.Model):
         backref=db.backref('users', lazy=True))
 
     def __repr__(self):
-        return f'User:{self.first_name} {self.last_name}'
+        return f'{self.first_name} {self.last_name}'
         
     def __init__(self, first_name, last_name):
         self.first_name = first_name
@@ -46,10 +46,16 @@ class products(db.Model):
     name = db.Column('Name', db.String(100), nullable = False, unique = True)
     desc = db.Column('Description', db.String(255), nullable = False)
     created_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
-    sell_state = db.Column(db.Boolean, nullable = False)
+    sell_state = db.Column(db.Boolean, default = True, nullable = False)
+    sales = db.relationship('products', secondary=Sales, lazy='subquery',
+        backref=db.backref('users', lazy=True))
 
     def __repr__(self):
         return f'Product:{self.name} - {self.desc}'
+    
+    def __init__(self, name, desc):
+        self.name = name
+        self.desc = desc
 
 db.create_all()
 db.session.commit()
@@ -116,6 +122,21 @@ def del_item():
         return 'Oops! It seems that product does not exist, please try again.'
     return 'Product succesfully deleted.'
 
-@app.route('/iteminfo', methods = ['GET'])
-def item_info():
-    None
+@app.route('/iteminfo/<id>', methods = ['GET'])
+def item_info(id):
+    item = products.query.get(id)
+    print(f'{item.name} - {item.desc}')
+    salelist = []
+
+    for sale in Sales:
+        if sale.product_id == id:
+            buyer = users.query.filter(sale.User_id == users.id)
+            salelist.append(buyer)
+    print (f'{item.name} - {item.desc}')
+    return salelist
+
+
+
+
+
+    
