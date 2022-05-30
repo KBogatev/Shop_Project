@@ -16,22 +16,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost:52000/shop_
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-Sales = db.Table('Sales',
-    db.Column('id', db.Integer, primary_key = True, nullable = False),
-    db.Column('user_id', db.Integer, db.ForeignKey('Users.id')),
-    db.Column('product_id', db.Integer, db.ForeignKey('Products.id')),
-    db.Column('sell_date', DateTime(timezone=True), server_default=func.now(), nullable = False)
-)
+class sales(db.Model):
+    __tablename__ = 'Sales'
+    id = db.Column(db.Integer, primary_key = True, autoincrement = True, nullable = False)
+    user_id = db.Column(db.Integer, db.ForeignKey('Users.id'))
+    product_id = db.Column(db.Integer, db.ForeignKey('Products.id'))
+    sell_date = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
     
-
 class users(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True, nullable = False)
     first_name = db.Column(db.String(80), nullable = False)
     last_name = db.Column(db.String(80), nullable = False)
     joined_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
-    buyers = db.relationship('products', secondary=Sales, lazy='subquery',
-        backref=db.backref('users', lazy=True))
 
     def __repr__(self):
         return f'{self.first_name} {self.last_name}'
@@ -47,8 +44,6 @@ class products(db.Model):
     desc = db.Column('Description', db.String(255), nullable = False)
     created_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
     sell_state = db.Column(db.Boolean, default = True, nullable = False)
-    sales = db.relationship('products', secondary=Sales, lazy='subquery',
-        backref=db.backref('users', lazy=True))
 
     def __repr__(self):
         return f'Product:{self.name} - {self.desc}'
@@ -71,6 +66,7 @@ def register():
     new_user = users(first_name=first_name, last_name=last_name)
     db.session.add(new_user)
     db.session.commit()
+    return 'User registered succesfully!'
 
 
 @app.route('/users', methods = ['GET'])
@@ -101,6 +97,7 @@ def add_item():
     new_item = products(name=item_name, desc=item_desc)
     db.session.add(new_item)
     db.session.commit()
+    return 'Product added succesfully!'
 
 @app.route('/items', methods = ['GET'])
 def get_items():
@@ -125,15 +122,13 @@ def del_item():
 @app.route('/iteminfo/<id>', methods = ['GET'])
 def item_info(id):
     item = products.query.get(id)
-    print(f'{item.name} - {item.desc}')
+    Sales = sales.query.filter(sales.product_id == id)
     salelist = []
-
     for sale in Sales:
-        if sale.product_id == id:
-            buyer = users.query.filter(sale.User_id == users.id)
-            salelist.append(buyer)
-    print (f'{item.name} - {item.desc}')
-    return salelist
+        buyer = users.query.filter(sale.user_id == users.id).first()
+        buyer_data = (f'{buyer.first_name} {buyer.last_name}')
+        salelist.append(buyer_data)
+    return {f"Buyers of {item.name}" : salelist}
 
 
 
