@@ -100,6 +100,21 @@ def user_info(id):
         items_data = (f'{items.name}')
         purchase_list.append(items_data)
     return {f"Purchases of {user.first_name} {user.last_name}" : purchase_list}
+
+@app.route('/users/update/<id>', methods = ['GET', 'PUT'])
+def user_update(id):
+    user = users.query.filter_by(id = id).first()
+    print('What information of the user would you like to update?(1 for first name, 2 for last name.)')
+    updt_choice = int(input('pick one of the options:'))
+    if updt_choice == 1:
+        user.first_name = input('What would you like the new first name of the user to be?:')
+        db.session.commit()
+        return 'The first name of the user has been updated succesfully.'
+    elif updt_choice == 2:
+        user.last_name = input('What would you like the new last name of the user to be?:')
+        db.session.commit()
+        return 'The last name of the user has been updated succesfully.'
+
 @app.route('/items/newitem', methods = ['GET', 'POST'])
 def add_item():
     item_name = str(input('Enter the name of your item:'))
@@ -129,6 +144,30 @@ def del_item():
         return 'Oops! It seems that product does not exist, please try again.'
     return 'Product succesfully deleted.'
 
+@app.route('/items/update/<id>', methods = ['GET', 'PUT'])
+def update_item(id):
+    item = products.query.filter_by(id = id).first()
+    print('What information of the product would you like to update?(1 for name, 2 for desc, 3 for sell_state)')
+    updt_choice = int(input('pick one of the options:'))
+    if updt_choice == 1:
+        item.name = input('What would you like the new name of the item to be?:')
+        db.session.commit()
+        return 'The item name has been succesfully updated.'
+    elif updt_choice == 2:
+        item.desc = input('What would you like the new description of the item to be?:')
+        db.session.commit()
+        return 'The item description has been succesfully updated.'
+    elif updt_choice == 3:
+        if item.sell_state == True:
+            item.sell_state = False
+            db.session.commit()
+            return 'The item is now no longer being sold.'
+        else:
+            item.sell_state = True
+            db.session.commit()
+            return 'The item is now up for sale.'
+    
+    
 @app.route('/iteminfo/<id>', methods = ['GET'])
 def item_info(id):
     item = products.query.get(id)
