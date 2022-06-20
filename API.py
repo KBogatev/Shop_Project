@@ -11,7 +11,7 @@ url = "mysql://root:root@localhost:52000"
 engine = create_engine(url)
 create_str = "CREATE DATABASE IF NOT EXISTS shop_db;"
 engine.execute(create_str)
-engine.execute("USE shop_db;")
+engine.execute("USE shop_db;") 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost:52000/shop_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -61,12 +61,16 @@ def index():
 
 @app.route('/users/register', methods = ['GET', 'POST'])
 def register():
-    first_name = str(input('Enter your first name:'))
-    last_name = str(input('Enter your last name:'))
-    new_user = users(first_name=first_name, last_name=last_name)
-    db.session.add(new_user)
-    db.session.commit()
-    return 'User registered succesfully!'
+    try:
+        first_name = input('Enter your first name:')
+        print("It seems you have made a wrong input, please try again.")
+        last_name = input('Enter your last name:')
+        new_user = users(first_name=first_name, last_name=last_name)
+        db.session.add(new_user)
+        db.session.commit()
+        return 'User registered succesfully!'
+    except ValueError:
+        print("It seems you have made a wrong input, please try again.")
 
 
 @app.route('/users', methods = ['GET'])
