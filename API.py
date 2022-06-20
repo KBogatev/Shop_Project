@@ -61,16 +61,17 @@ def index():
 
 @app.route('/users/register', methods = ['GET', 'POST'])
 def register():
-    try:
-        first_name = input('Enter your first name:')
-        print("It seems you have made a wrong input, please try again.")
-        last_name = input('Enter your last name:')
-        new_user = users(first_name=first_name, last_name=last_name)
-        db.session.add(new_user)
-        db.session.commit()
-        return 'User registered succesfully!'
-    except ValueError:
-        print("It seems you have made a wrong input, please try again.")
+    while True: 
+        try:
+            first_name = str(input('Enter your first name:'))
+            last_name = str(input('Enter your last name:'))
+            new_user = users(first_name=first_name, last_name=last_name)
+            db.session.add(new_user)
+            db.session.commit()
+            break
+        except ValueError:
+            print("It seems you have made a wrong input, please try again.")
+    return 'User registered succesfully!'
 
 
 @app.route('/users', methods = ['GET'])
