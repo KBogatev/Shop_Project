@@ -1,7 +1,8 @@
-from flask import Flask, request, url_for, redirect
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, DateTime
 from sqlalchemy.sql import func
+import re
 app = Flask(__name__)
 import os
 SECRET_KEY = os.urandom(32)
@@ -61,18 +62,17 @@ def index():
 
 @app.route('/users/register', methods = ['GET', 'POST'])
 def register():
-    while True: 
-        try:
-            first_name = str(input('Enter your first name:'))
-            last_name = str(input('Enter your last name:'))
-            new_user = users(first_name=first_name, last_name=last_name)
-            db.session.add(new_user)
-            db.session.commit()
-            break
-        except ValueError:
-            print("It seems you have made a wrong input, please try again.")
-    return 'User registered succesfully!'
-
+    pattern = re.compile(r'[a-zA-Z ]')
+    first_name = input('Enter your first name:')
+    last_name = input('Enter your last name:')
+    if not pattern.match(first_name) or not pattern.match(last_name):
+        print("It seems you have made a wrong input.") 
+        return "You have encountered an error. Please restart the registration process."
+    else:
+        new_user = users(first_name=first_name, last_name=last_name)
+        db.session.add(new_user)
+        db.session.commit()
+        return "User registered succesfully!"
 
 @app.route('/users', methods = ['GET'])
 def get_users():
