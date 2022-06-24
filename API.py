@@ -62,7 +62,7 @@ def index():
 
 @app.route('/users/register', methods = ['GET', 'POST'])
 def register():
-    pattern = re.compile(r'[a-zA-Z ]')
+    pattern = re.compile(r'[a-zA-Z]')
     first_name = input('Enter your first name:')
     last_name = input('Enter your last name:')
     if not pattern.match(first_name) or not pattern.match(last_name):
@@ -80,20 +80,24 @@ def get_users():
     userlist = []
 
     for user in Users:
-        user_data = (f'{user.first_name} {user.last_name}')
+        user_data = (f'{user.id} - {user.first_name} {user.last_name}')
         userlist.append(user_data)
     return {"Users": userlist}
 
 @app.route('/users/unsubscribe', methods = ['GET', 'DELETE'])
 def del_user():
+    pattern = re.compile(r'[a-zA-Z]')
     try:
-        first_name = str(input('Enter the first name of the user you wish to delete:'))
-        last_name = str(input('Enter the last name of the user you wish to delete:'))
-        users.query.filter(users.first_name == first_name, users.last_name==last_name).delete()
-        db.session.commit()    
+        user = int(input("Enter the id of the user you wish to delete:"))
     except ValueError:
-        return 'Oops! It seems that user does not exist, please try again.'
-    return 'User succesfully deleted.'
+        print("Only numbers are accepted.")
+    exists = db.session.query(db.exists().where(users.id == user)).scalar()
+    if exists == True:
+        users.query.filter(users.id == user).delete()
+        db.session.commit()    
+        return 'User succesfully deleted.'
+    else:
+        return "It seems that user does not exist in the database."
 
 @app.route('/userinfo/<id>', methods = ['GET'])
 def user_info(id):
@@ -108,26 +112,40 @@ def user_info(id):
 
 @app.route('/users/update/<id>', methods = ['GET', 'PUT'])
 def user_update(id):
+    pattern = re.compile(r'[a-zA-Z]')
     user = users.query.filter_by(id = id).first()
     print('What information of the user would you like to update?(1 for first name, 2 for last name.)')
-    updt_choice = int(input('pick one of the options:'))
+    try:
+        updt_choice = int(input('pick one of the options:'))
+    except updt_choice > 2 or updt_choice < 1:
+        print("That is not one of the options.")
     if updt_choice == 1:
         user.first_name = input('What would you like the new first name of the user to be?:')
-        db.session.commit()
-        return 'The first name of the user has been updated succesfully.'
+        if not pattern.match(user.first_name):
+            return "The new first name you have selected is not valid. Please try again."
+        else:
+            db.session.commit()
+            return 'The first name of the user has been updated succesfully.'
     elif updt_choice == 2:
         user.last_name = input('What would you like the new last name of the user to be?:')
-        db.session.commit()
-        return 'The last name of the user has been updated succesfully.'
+        if not pattern.match(user.last_name):
+            return "The new last name you have selected is not valid. Please try again."
+        else:
+            db.session.commit()
+            return 'The last name of the user has been updated succesfully.'
 
 @app.route('/items/newitem', methods = ['GET', 'POST'])
 def add_item():
+    pattern = re.compile(r'[a-zA-Z ]')
     item_name = str(input('Enter the name of your item:'))
     item_desc = str(input('Enter the description of your item:'))
-    new_item = products(name=item_name, desc=item_desc)
-    db.session.add(new_item)
-    db.session.commit()
-    return 'Product added succesfully!'
+    if not pattern.match(item_name) or not pattern.match(item_desc):
+        return "Error! The item you are trying to add is invalid. Please try again."
+    else:
+        new_item = products(name=item_name, desc=item_desc)
+        db.session.add(new_item)
+        db.session.commit()
+        return 'Product added succesfully!'
 
 @app.route('/items', methods = ['GET'])
 def get_items():
@@ -141,27 +159,38 @@ def get_items():
 
 @app.route('/items/removeitem', methods = ['GET', 'DELETE'])
 def del_item():
-    try:
-        item_name = str(input('Enter the name of the product you wish to delete:'))
+    pattern = re.compile(r'[a-zA-Z ]')
+    item_name = str(input('Enter the name of the product you wish to delete:'))
+    if not pattern.match(item_name):
+        return 'Oops! It seems that product does not exist, please try again.'
+    else:
         products.query.filter(products.name == item_name).delete()
         db.session.commit()    
-    except ValueError:
-        return 'Oops! It seems that product does not exist, please try again.'
-    return 'Product succesfully deleted.'
+        return 'Product succesfully deleted.'
 
 @app.route('/items/update/<id>', methods = ['GET', 'PUT'])
 def update_item(id):
+    pattern = re.compile(r'[a-zA-Z ]')
     item = products.query.filter_by(id = id).first()
     print('What information of the product would you like to update?(1 for name, 2 for desc, 3 for sell_state)')
-    updt_choice = int(input('pick one of the options:'))
+    try:
+        updt_choice = int(input('pick one of the options:'))
+    except updt_choice > 3 or updt_choice < 1:
+        print("That is not one of the options.")
     if updt_choice == 1:
         item.name = input('What would you like the new name of the item to be?:')
-        db.session.commit()
-        return 'The item name has been succesfully updated.'
+        if not pattern.match(item.name):
+            return "The new item name you have selected is not valid. Please try again."
+        else:
+            db.session.commit()
+            return 'The item name has been succesfully updated.'
     elif updt_choice == 2:
         item.desc = input('What would you like the new description of the item to be?:')
-        db.session.commit()
-        return 'The item description has been succesfully updated.'
+        if not pattern.match(item.desc):
+            return "The new item description you have selected is not valid. Please try again."
+        else:   
+            db.session.commit()
+            return 'The item description has been succesfully updated.'
     elif updt_choice == 3:
         if item.sell_state == True:
             item.sell_state = False
