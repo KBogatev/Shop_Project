@@ -58,7 +58,8 @@ db.session.commit()
 
 @app.route('/')
 def index():
-    return 'Hello, welcome to our shop!'
+    Users = users.query.count()
+    return f'Hello, welcome to our shop! There are currently {Users} registered users.'
 
 @app.route('/users/register', methods = ['GET', 'POST'])
 def register():
