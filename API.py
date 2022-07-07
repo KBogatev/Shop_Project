@@ -1,7 +1,8 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine, DateTime
+from sqlalchemy import create_engine
 from sqlalchemy.sql import func
+from datetime import date
 import re
 app = Flask(__name__)
 import os
@@ -22,14 +23,14 @@ class sales(db.Model):
     id = db.Column(db.Integer, primary_key = True, autoincrement = True, nullable = False)
     user_id = db.Column(db.Integer, db.ForeignKey('Users.id'))
     product_id = db.Column(db.Integer, db.ForeignKey('Products.id'))
-    sell_date = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
+    sell_date = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable = False)
     
 class users(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True, nullable = False)
     first_name = db.Column(db.String(80), nullable = False)
     last_name = db.Column(db.String(80), nullable = False)
-    joined_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
+    joined_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable = False)
 
     def __repr__(self):
         return f'{self.first_name} {self.last_name}'
@@ -43,7 +44,7 @@ class products(db.Model):
     id = db.Column(db.Integer, primary_key = True, nullable = False)
     name = db.Column('Name', db.String(100), nullable = False, unique = True)
     desc = db.Column('Description', db.String(255), nullable = False)
-    created_at = db.Column(DateTime(timezone=True), server_default=func.now(), nullable = False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable = False)
     sell_state = db.Column(db.Boolean, default = True, nullable = False)
 
     def __repr__(self):
@@ -64,8 +65,8 @@ def index():
 @app.route('/users/register', methods = ['GET', 'POST'])
 def register():
     pattern = re.compile(r'[a-zA-Z]')
-    first_name = input('Enter your first name:')
-    last_name = input('Enter your last name:')
+    first_name = str(input('Enter your first name:'))
+    last_name = str(input('Enter your last name:'))
     if not pattern.match(first_name) or not pattern.match(last_name):
         print("It seems you have made a wrong input.") 
         return "You have encountered an error. Please restart the registration process."
@@ -154,9 +155,32 @@ def get_items():
     itemlist = []
 
     for item in Items:
-        item_data = (f'{item.name} - {item.desc}')
+        item_data = (f'{item.id}:{item.name} - {item.desc}')
         itemlist.append(item_data)
     return {"Products": itemlist}
+
+@app.route('/items/buy', methods = ['GET', 'POST'])
+def buy_item():
+    Items = products.query.all()
+    itemlist = []
+
+    for item in Items:
+        item_data = (f'{item.id}:{item.name} - {item.desc}')
+        itemlist.append(item_data)
+    print(f"Products: {itemlist}")
+    try:
+        purchase = int(input("What item do you wish to buy?(Enter the id of the item):"))
+        buyer = int(input("Enter the id of the buyer who is purchasing the product:"))
+    except ValueError:
+        print("Only numbers are accepted.")
+    item_exists = db.session.query(db.exists().where(products.id == purchase)).scalar()
+    user_exists = db.session.query(db.exists().where(users.id == buyer)).scalar()
+    if item_exists == True and user_exists == True:
+        new_sale = sales(user_id=buyer, product_id=purchase)
+        db.session.add(new_sale)
+        return "The item has been succcesfully bought!"
+    else:
+        return "It seems that either the item being purchased or the user selected do not exist."
 
 @app.route('/items/removeitem', methods = ['GET', 'DELETE'])
 def del_item():
@@ -213,6 +237,19 @@ def item_info(id):
         buyer_data = (f'{buyer.first_name} {buyer.last_name}')
         salelist.append(buyer_data)
     return {f"Buyers of {item.name}" : salelist}
+
+@app.route('/salesinfo', methods = ['GET'])
+def sales_info():
+    Items = products.query.all()
+    itemlist = []
+    from_date = date(input("Please select the start date of your query(format: yyyy, m, dd):"))
+    to_date = date(input("Please select the end date of your query(format: yyyy, m, dd):"))
+    Sales = sales.query.filter(sales.sell_date.between(from_date, to_date)).all()
+
+    for item in Items:
+        item_data = (f'{item.name}')
+        itemlist.append(item_data)
+    return {"Product Sales": itemlist}
 
 
 
