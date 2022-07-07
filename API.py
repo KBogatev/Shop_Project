@@ -178,6 +178,7 @@ def buy_item():
     if item_exists == True and user_exists == True:
         new_sale = sales(user_id=buyer, product_id=purchase)
         db.session.add(new_sale)
+        db.session.commit()
         return "The item has been succcesfully bought!"
     else:
         return "It seems that either the item being purchased or the user selected do not exist."
