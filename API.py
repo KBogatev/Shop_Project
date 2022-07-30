@@ -183,6 +183,25 @@ def buy_item():
     else:
         return "It seems that either the item being purchased or the user selected do not exist."
 
+@app.route('/items/featured', methods = ['GET'])
+def featured_item():
+    Sales = sales.query.all()
+    Items = products.query.all()
+    itemlist = []
+    SaleCount = 0
+    def myFunc(e):
+        return e['Sales']
+
+    for item in Items:
+        SaleCount = 0
+        for sale in Sales:
+            if sale.product_id == item.id:
+                SaleCount = SaleCount + 1
+        item_data = {'item': item.name, 'Sales': SaleCount}
+        itemlist.append(item_data)  
+    itemlist.sort(reverse = True, key=myFunc)
+    return {"Most popular items.": itemlist}
+
 @app.route('/items/removeitem', methods = ['GET', 'DELETE'])
 def del_item():
     pattern = re.compile(r'[a-zA-Z ]')
@@ -243,14 +262,33 @@ def item_info(id):
 def sales_info():
     Items = products.query.all()
     itemlist = []
-    from_date = date(input("Please select the start date of your query(format: yyyy, m, dd):"))
-    to_date = date(input("Please select the end date of your query(format: yyyy, m, dd):"))
+    SaleCount = 0
+    try:
+        start_year = int(input("Choose the start year for your query(format:yyyy):"))
+        start_month = int(input("Choose the start month for your query(format:mm):"))
+        start_day = int(input("Choose the start day for your query(format:dd):"))
+        end_year = int(input("Choose the end year for your query(format:yyyy):"))
+        end_month = int(input("Choose the end month for your query(format:mm):"))
+        end_day = int(input("Choose the end day for your query(format:dd):"))
+    except ValueError:
+        print("You entered an invalid input.")
+    try:
+        from_date = date(start_year, start_month, start_day)
+        to_date = date(end_year, end_month, end_day)
+    except ValueError:
+        return "The dates you provided were not valid."
     Sales = sales.query.filter(sales.sell_date.between(from_date, to_date)).all()
 
     for item in Items:
-        item_data = (f'{item.name}')
-        itemlist.append(item_data)
-    return {"Product Sales": itemlist}
+        SaleCount = 0
+        for sale in Sales:
+            if sale.product_id == item.id:
+                SaleCount = SaleCount + 1
+        item_data = (f"{item.name}:{SaleCount}")
+        itemlist.append(item_data)  
+
+    return {"Sales Info": itemlist}
+
 
 
 
