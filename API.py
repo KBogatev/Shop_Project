@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.sql import func
-from datetime import date
+from datetime import datetime
 import re
 app = Flask(__name__)
 CORS(app)
@@ -66,18 +66,13 @@ def index():
 
 @app.route('/users/register', methods = ['GET', 'POST'])
 def register():
-    pattern = re.compile(r'[a-zA-Z]')
-    first_name = str(input('Enter your first name:'))
-    last_name = str(input('Enter your last name:'))
-    if not pattern.match(first_name) or not pattern.match(last_name):
-        print("It seems you have made a wrong input.") 
-        return "You have encountered an error. Please restart the registration process."
-    else:
-        new_user = users(first_name=first_name, last_name=last_name)
+        pattern = re.compile(r'[a-zA-Z]')
+        new_user = users(first_name=request.json['first name'], last_name=request.json['last name'])
+        if not pattern.match(str(new_user)):
+            return "It seems you have made a wrong input. Please try again."
         db.session.add(new_user)
         db.session.commit()
         return "User registered succesfully!"
-
 @app.route('/users', methods = ['GET'])
 def get_users():
     Users = users.query.all()
@@ -88,24 +83,20 @@ def get_users():
         userlist.append(user_data)
     return {"Users": userlist}
 
-@app.route('/users/unsubscribe', methods = ['GET', 'DELETE'])
-def del_user():
-    pattern = re.compile(r'[a-zA-Z]')
-    try:
-        user = int(input("Enter the id of the user you wish to delete:"))
-    except ValueError:
-        print("Only numbers are accepted.")
-    exists = db.session.query(db.exists().where(users.id == user)).scalar()
-    if exists == True:
-        users.query.filter(users.id == user).delete()
-        db.session.commit()    
-        return 'User succesfully deleted.'
-    else:
+@app.route('/users/unsubscribe/<id>', methods = ['GET', 'DELETE'])
+def del_user(id):
+    user = users.query.get(id)
+    if user is None:
         return "It seems that user does not exist in the database."
+    db.session.delete(user)
+    db.session.commit()    
+    return 'User succesfully deleted.'
 
 @app.route('/userinfo/<id>', methods = ['GET'])
 def user_info(id):
     user = users.query.get(id)
+    if user is None:
+        return "It seems that user does not exist in the database."
     Sales = sales.query.filter(sales.user_id == id)
     purchase_list = []
     for sale in Sales:
@@ -116,46 +107,29 @@ def user_info(id):
 
 @app.route('/users/update/<id>', methods = ['GET', 'PUT'])
 def user_update(id):
-    pattern = re.compile(r'[a-zA-Z]')
     user = users.query.filter_by(id = id).first()
-    print('What information of the user would you like to update?(1 for first name, 2 for last name.)')
-    try:
-        updt_choice = int(input('pick one of the options:'))
-    except updt_choice > 2 or updt_choice < 1:
-        print("That is not one of the options.")
-    if updt_choice == 1:
-        user.first_name = input('What would you like the new first name of the user to be?:')
-        if not pattern.match(user.first_name):
-            return "The new first name you have selected is not valid. Please try again."
-        else:
-            db.session.commit()
-            return 'The first name of the user has been updated succesfully.'
-    elif updt_choice == 2:
-        user.last_name = input('What would you like the new last name of the user to be?:')
-        if not pattern.match(user.last_name):
-            return "The new last name you have selected is not valid. Please try again."
-        else:
-            db.session.commit()
-            return 'The last name of the user has been updated succesfully.'
+    pattern = re.compile(r'[a-zA-Z]')
+    user.first_name = request.json['first name']
+    user.last_name = request.json['last name']
+    if not pattern.match(user.first_name) or not pattern.match(user.last_name):
+        return "It seems you have made a wrong input. Please try again."
+    db.session.commit()
+    return "The user's information has been updated succesfully."
 
 @app.route('/items/newitem', methods = ['GET', 'POST'])
 def add_item():
-    pattern = re.compile(r'[a-zA-Z ]')
-    item_name = str(input('Enter the name of your item:'))
-    item_desc = str(input('Enter the description of your item:'))
-    if not pattern.match(item_name) or not pattern.match(item_desc):
-        return "Error! The item you are trying to add is invalid. Please try again."
-    else:
-        new_item = products(name=item_name, desc=item_desc)
-        db.session.add(new_item)
-        db.session.commit()
-        return 'Product added succesfully!'
+    pattern = re.compile(r'[a-zA-Z]')
+    item = products(name = request.json['item name'], desc = request.json['description'])
+    if not pattern.match(str(item)):
+            return "It seems you have made a wrong input. Please try again."
+    db.session.add(item)
+    db.session.commit()
+    return 'Product added succesfully!'
 
 @app.route('/items', methods = ['GET'])
 def get_items():
     Items = products.query.all()
     itemlist = []
-
     for item in Items:
         item_data = (f'{item.id}:{item.name} - {item.desc}')
         itemlist.append(item_data)
@@ -163,27 +137,23 @@ def get_items():
 
 @app.route('/items/buy', methods = ['GET', 'POST'])
 def buy_item():
-    Items = products.query.all()
-    itemlist = []
-
-    for item in Items:
-        item_data = (f'{item.id}:{item.name} - {item.desc}')
-        itemlist.append(item_data)
-    print(f"Products: {itemlist}")
-    try:
-        purchase = int(input("What item do you wish to buy?(Enter the id of the item):"))
-        buyer = int(input("Enter the id of the buyer who is purchasing the product:"))
-    except ValueError:
-        print("Only numbers are accepted.")
-    item_exists = db.session.query(db.exists().where(products.id == purchase)).scalar()
-    user_exists = db.session.query(db.exists().where(users.id == buyer)).scalar()
-    if item_exists == True and user_exists == True:
-        new_sale = sales(user_id=buyer, product_id=purchase)
-        db.session.add(new_sale)
-        db.session.commit()
-        return "The item has been succcesfully bought!"
-    else:
-        return "It seems that either the item being purchased or the user selected do not exist."
+        userlist = []
+        itemlist = []
+        Users = users.query.all()
+        Items = products.query.all()
+        for user in Users:
+            userlist.append(user.id)
+        for item in Items:
+            itemlist.append(item.id)
+        new_sale = sales(user_id = request.json['user id'], product_id = request.json['product id'])
+        exists1 = db.session.query(db.exists().where(users.id == new_sale.user_id)).scalar()
+        exists2 = db.session.query(db.exists().where(products.id == new_sale.product_id)).scalar()
+        if exists1 == True and exists2 == True:
+            db.session.add(new_sale)
+            db.session.commit()
+            return "The item has been succcesfully bought!"
+        else:
+            return "It seems you have made a wrong input. Please try again."
 
 @app.route('/items/featured', methods = ['GET'])
 def featured_item():
@@ -204,54 +174,33 @@ def featured_item():
     itemlist.sort(reverse = True, key=myFunc)
     return {"Most popular items.": itemlist}
 
-@app.route('/items/removeitem', methods = ['GET', 'DELETE'])
-def del_item():
-    pattern = re.compile(r'[a-zA-Z ]')
-    item_name = str(input('Enter the name of the product you wish to delete:'))
-    if not pattern.match(item_name):
-        return 'Oops! It seems that product does not exist, please try again.'
-    else:
-        products.query.filter(products.name == item_name).delete()
-        db.session.commit()    
-        return 'Product succesfully deleted.'
+@app.route('/items/removeitem/<id>', methods = ['GET', 'DELETE'])
+def del_item(id):
+    item = products.query.get(id)
+    if item is None:
+        return "It seems that product does not exist in the database."
+    db.session.delete(item)
+    db.session.commit()
+    return 'Product succesfully deleted.'
 
 @app.route('/items/update/<id>', methods = ['GET', 'PUT'])
 def update_item(id):
-    pattern = re.compile(r'[a-zA-Z ]')
     item = products.query.filter_by(id = id).first()
-    print('What information of the product would you like to update?(1 for name, 2 for desc, 3 for sell_state)')
-    try:
-        updt_choice = int(input('pick one of the options:'))
-    except updt_choice > 3 or updt_choice < 1:
-        print("That is not one of the options.")
-    if updt_choice == 1:
-        item.name = input('What would you like the new name of the item to be?:')
-        if not pattern.match(item.name):
-            return "The new item name you have selected is not valid. Please try again."
-        else:
-            db.session.commit()
-            return 'The item name has been succesfully updated.'
-    elif updt_choice == 2:
-        item.desc = input('What would you like the new description of the item to be?:')
-        if not pattern.match(item.desc):
-            return "The new item description you have selected is not valid. Please try again."
-        else:   
-            db.session.commit()
-            return 'The item description has been succesfully updated.'
-    elif updt_choice == 3:
-        if item.sell_state == True:
-            item.sell_state = False
-            db.session.commit()
-            return 'The item is now no longer being sold.'
-        else:
-            item.sell_state = True
-            db.session.commit()
-            return 'The item is now up for sale.'
+    pattern = re.compile(r'[a-zA-Z]')
+    item.name = request.json['item name']
+    item.desc = request.json['description']
+    item.sell_state = request.json['sell state']
+    if not pattern.match(item.name) or not pattern.match(item.desc) or not pattern.match(item.sell_state):
+        return "It seems you have made a wrong input. Please try again."
+    db.session.commit()
+    return "The product's information has been updated succesfully."
     
     
 @app.route('/iteminfo/<id>', methods = ['GET'])
 def item_info(id):
     item = products.query.get(id)
+    if item is None:
+        return "It seems that product does not exist in the database."
     Sales = sales.query.filter(sales.product_id == id)
     salelist = []
     for sale in Sales:
@@ -260,26 +209,17 @@ def item_info(id):
         salelist.append(buyer_data)
     return {f"Buyers of {item.name}" : salelist}
 
-@app.route('/salesinfo', methods = ['GET'])
+@app.route('/salesinfo', methods = ['GET', 'POST'])
 def sales_info():
     Items = products.query.all()
     itemlist = []
     SaleCount = 0
     try:
-        start_year = int(input("Choose the start year for your query(format:yyyy):"))
-        start_month = int(input("Choose the start month for your query(format:mm):"))
-        start_day = int(input("Choose the start day for your query(format:dd):"))
-        end_year = int(input("Choose the end year for your query(format:yyyy):"))
-        end_month = int(input("Choose the end month for your query(format:mm):"))
-        end_day = int(input("Choose the end day for your query(format:dd):"))
+        start_date = datetime.strptime(request.json['start date'], '%Y-%m-%d')
+        end_date = datetime.strptime(request.json['end date'], '%Y-%m-%d')
     except ValueError:
-        print("You entered an invalid input.")
-    try:
-        from_date = date(start_year, start_month, start_day)
-        to_date = date(end_year, end_month, end_day)
-    except ValueError:
-        return "The dates you provided were not valid."
-    Sales = sales.query.filter(sales.sell_date.between(from_date, to_date)).all()
+        return "The dates you provided were invalid."
+    Sales = sales.query.filter(sales.sell_date.between(start_date, end_date)).all()
 
     for item in Items:
         SaleCount = 0
